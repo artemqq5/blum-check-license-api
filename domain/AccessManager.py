@@ -11,15 +11,17 @@ class AccessManager:
         if not access:
             return [False, "Доступа не існує"]
 
-        if access['harddrive_id'] is not None and access['harddrive_id'] != harddrive_id:
-            return [False, "Доступ прив'язано до іншого пристрою"]
-
         if access['harddrive_id'] is None:
             return self.__activate_access(access, harddrive_id)
 
-        if access['harddrive_id'] is not None and datetime.now() > access['end_time']:
+        if access['harddrive_id'] != harddrive_id:
+            return [False, "Доступ прив'язано до іншого пристрою"]
+
+        if datetime.now() > access['end_time']:
             return [False, "Доступ просрочено"]
 
+        if access['harddrive_id'] == harddrive_id:
+            return [True, "Доступ дозволено"]
 
     @staticmethod
     def __activate_access(access, harddrive_id):
