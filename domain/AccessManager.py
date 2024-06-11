@@ -5,40 +5,28 @@ from data.repository.AccessRepository import AccessRepository
 
 class AccessManager:
 
-    def activate(self, access, harddrive_id):
+    def activate(self, harddrive_id, uuid_key):
+        access = AccessRepository().access(uuid_key)
+
         if not access:
-            return False
+            return [False, "Доступа не існує"]
 
-        if not self.__is_free(access):
-            return False
+        if access['harddrive_id'] is not None and access['harddrive_id'] != harddrive_id:
+            return [False, "Доступ прив'язано до іншого пристрою"]
 
+        if access['harddrive_id'] is None:
+            return self.__activate_access(access, harddrive_id)
+
+        if access['harddrive_id'] is not None and datetime.now() > access['end_time']:
+            return [False, "Доступ просрочено"]
+
+
+    @staticmethod
+    def __activate_access(access, harddrive_id):
         start_time = datetime.now()
         end_time = start_time + timedelta(days=access['days'])
 
-        if not AccessRepository().activate(start_time, end_time, harddrive_id, uuid_key):
-            return False
+        if not AccessRepository().activate(start_time, end_time, harddrive_id, access['uuid_key']):
+            return [False, "Невдалося активувати доступ"]
 
-        return True
-
-    def check(self, access, harddrive_id):
-        if not access:
-            return False
-
-        if self.__is_free(access):
-            return False
-
-        subscribe_active = datetime.now() < access['end_time']
-        if access['harddrive_id'] != harddrive_id or not subscribe_active:
-            return False
-
-        return True
-
-    @staticmethod
-    def __is_free(access):
-        if not access['harddrive_id'] and not access['start_time'] and not access['end_time']:
-            return True
-
-        return False
-
-
-
+        return [True, "Доступ активовано"]
